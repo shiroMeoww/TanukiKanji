@@ -1,0 +1,229 @@
+{
+  "info": {
+    "name": "Tanuki Kanji API",
+    "description": "Kolekcja endpointów dla aplikacji Tanuki Kanji. Po zalogowaniu token JWT jest automatycznie ustawiany w zmiennej {{token}} i używany przez wszystkie chronione żądania.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tanuki_user\",\n  \"password\": \"secret123\"\n}"
+            },
+            "description": "Rejestracja nowego konta. Zwraca token JWT i dane użytkownika.\n\n**Walidacja:**\n- `username`: min 3, max 50 znaków\n- `password`: min 6 znaków\n\n**Błędy:**\n- `400` Nieprawidłowe dane\n- `409` Username już zajęty"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "  console.log('Token zapisany:', res.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"tanuki_user\",\n  \"password\": \"secret123\"\n}"
+            },
+            "description": "Logowanie. Token JWT jest automatycznie zapisywany w zmiennej `{{token}}` dla wszystkich kolejnych żądań.\n\n**Błędy:**\n- `400` Nieprawidłowe dane\n- `401` Błędne dane logowania"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "  console.log('Token zapisany:', res.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] },
+            "description": "Usuwa sesję po stronie serwera.\n\n**Wymaga:** Authorization: Bearer {{token}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('token', '');",
+                  "console.log('Token wyczyszczony');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/user/profile", "host": ["{{baseUrl}}"], "path": ["user", "profile"] },
+            "description": "Dane zalogowanego użytkownika: id, username, rola, aktualny poziom, data rejestracji."
+          }
+        },
+        {
+          "name": "Get Stats",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/user/stats", "host": ["{{baseUrl}}"], "path": ["user", "stats"] },
+            "description": "Statystyki SRS:\n- Podział na Apprentice / Guru / Master / Enlightened / Burned\n- Liczba dostępnych lekcji i powtórek\n- Nadchodzące powtórki (co godzinę)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lessons",
+      "item": [
+        {
+          "name": "Get Lessons",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/lessons", "host": ["{{baseUrl}}"], "path": ["lessons"] },
+            "description": "Zwraca max 10 przedmiotów gotowych do nauki (SRS stage = 0, odblokowane).\n\nKażdy element ma pole `type` (kanji/vocabulary) i `data` z detalami."
+          }
+        },
+        {
+          "name": "Complete Lessons",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/lessons/complete", "host": ["{{baseUrl}}"], "path": ["lessons", "complete"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"type\": \"kanji\", \"id\": 1 },\n    { \"type\": \"vocabulary\", \"id\": 1 }\n  ]\n}"
+            },
+            "description": "Przenosi przedmioty z SRS stage 0 → 1 (Apprentice 1). Ustawia first_review za 4 godziny."
+          }
+        },
+        {
+          "name": "Unlock Items",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/lessons/unlock", "host": ["{{baseUrl}}"], "path": ["lessons", "unlock"] },
+            "description": "Odblokowuje nowe kanji i słownictwo z aktualnego poziomu.\n\n**Zasady:**\n- Max 10 nowych przedmiotów dziennie\n- Słownictwo odblokowuje się tylko gdy wymagane kanji są na Guru+ (stage ≥ 4)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Get Reviews",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/reviews", "host": ["{{baseUrl}}"], "path": ["reviews"] },
+            "description": "Zwraca wszystkie przedmioty, których czas powtórki minął.\n\nKażdy przedmiot pojawia się dwa razy:\n- `question_type: \"meaning\"` — podaj znaczenie po angielsku\n- `question_type: \"reading\"` — podaj odczyt w hiraganie\n\nKolejność jest losowa."
+          }
+        },
+        {
+          "name": "Submit Answer",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/reviews/submit", "host": ["{{baseUrl}}"], "path": ["reviews", "submit"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_type\": \"kanji\",\n  \"item_id\": 1,\n  \"question_type\": \"meaning\",\n  \"answer\": \"one\"\n}"
+            },
+            "description": "Ocenia odpowiedź i aktualizuje SRS stage.\n\n**Zasady oceniania:**\n- Odpowiedzi są case-insensitive\n- Dla odczytu akceptowany jest on-reading lub kun-reading\n- Poprawna → stage +1 (max 6)\n- Błędna → stage -1 (min 1)\n\n**Odpowiedź zawiera:**\n- `is_correct` — czy poprawna\n- `srs_stage_before` / `srs_stage_after`\n- `leveled_up` — czy nastąpił level up (90% kanji na Guru+)\n\n**Błędy:**\n- `404` Przedmiot nie istnieje lub nie jest gotowy do powtórki"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Levels",
+      "item": [
+        {
+          "name": "Get Level 1",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/levels/1", "host": ["{{baseUrl}}"], "path": ["levels", "1"] },
+            "description": "Zwraca wszystkie kanji dla poziomu 1 wraz z informacją, czy użytkownik je odblokował."
+          }
+        },
+        {
+          "name": "Get Level 2",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/levels/2", "host": ["{{baseUrl}}"], "path": ["levels", "2"] },
+            "description": "Zwraca wszystkie kanji dla poziomu 2."
+          }
+        },
+        {
+          "name": "Get Level 3",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/levels/3", "host": ["{{baseUrl}}"], "path": ["levels", "3"] },
+            "description": "Zwraca wszystkie kanji dla poziomu 3."
+          }
+        }
+      ]
+    }
+  ]
+}
