@@ -39,10 +39,6 @@ docker compose up --build
 - aplikacja: http://localhost:3000
 - postgres: localhost:5432
 
-## Konta testowe
-
-- admin: `admin` / `admin123`
-- user: `testuser` / `user123`
 
 Aplikacja bedzie pod: http://localhost:3000
 
